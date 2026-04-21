@@ -8,35 +8,27 @@ Hydroponic Agriculture Management System Web Frontend - a management platform fo
 
 ## Tech Stack
 
-- **Framework**: Vue 3 + Composition API
-- **UI Library**: Element Plus
-- **Build Tool**: Vite
-- **State Management**: Pinia
-- **Router**: Vue Router
-- **HTTP Client**: Axios
-- **Charts**: ECharts
-- **Language**: TypeScript
+| Category | Technology |
+|----------|------------|
+| Framework | Vue 3 + Composition API |
+| UI Library | Element Plus |
+| Build Tool | Vite |
+| State Management | Pinia |
+| Router | Vue Router |
+| HTTP Client | Axios |
+| Charts | ECharts |
+| Styles | Sass (SCSS) |
+| Language | TypeScript |
 
 ## Development Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Type check
-npm run type-check
-
-# Lint
-npm run lint
+npm install        # Install dependencies
+npm run dev        # Start development server (default: http://localhost:5173)
+npm run build      # Build for production (includes type-check)
+npm run preview    # Preview production build
+npm run type-check # TypeScript type check only
+npm run lint       # ESLint check and fix
 ```
 
 ## Architecture
@@ -45,45 +37,146 @@ npm run lint
 
 ```
 src/
-├── api/           # API request modules (auth.ts, device.ts, telemetry.ts, etc.)
-├── assets/        # Static assets and global styles
-├── components/    # Shared components (layout/, common/)
+├── api/           # API modules (auth.ts, device.ts, telemetry.ts, device-group.ts)
+├── assets/        # Static assets (styles/variables.scss, styles/global.scss)
+├── components/    # Shared components (layout/)
 ├── composables/   # Vue composables (useAuth.ts, usePermission.ts)
-├── router/        # Route configuration
+├── router/        # Route configuration with guards
 ├── stores/        # Pinia stores (auth.ts, device.ts)
-├── types/         # TypeScript type definitions
-├── utils/         # Utility functions (request.ts, format.ts)
-└── views/         # Page components
+├── types/         # TypeScript definitions (user.ts, device.ts, telemetry.ts, api.ts)
+├── utils/         # Utilities (storage.ts, format.ts)
+└── views/         # Page components (login/, devices/, device-groups/, telemetry/)
 ```
 
-### Key Patterns
+### API Layer
 
-1. **API Layer**: Each domain has its own API module in `src/api/`. All requests go through a centralized Axios instance in `request.ts` that handles:
-   - Auto-adding JWT token to Authorization header
-   - Unified error handling (401 → login, 403 → permission denied)
-   - Response format: `{ code, message, data, request_id }`
+All API requests go through centralized Axios instance (`src/api/request.ts`):
 
-2. **Authentication**: JWT stored in localStorage, user info in Pinia store. Route guards check token validity.
+**Request Flow:**
+1. Request interceptor adds `Authorization: Bearer <token>` header
+2. Response interceptor handles business errors (`code !== 0`)
+3. HTTP errors mapped: `401 → clearAuth → /login`, `403 → permission denied`
 
-3. **Permissions**: Three roles - ADMIN (full access), OPERATOR (query + control), VIEWER (query only). Control via route meta and `hasPermission()` composable.
+**Response Format:**
+```typescript
+interface ApiResponse<T> {
+  code: number      // 0 = success
+  message: string
+  data: T
+  request_id: string
+}
+```
 
-4. **State Management**: Use Pinia stores for global state (auth, device selections). Local state in components for page-specific data.
+**Usage:**
+```typescript
+// In api/*.ts files
+import { get, post } from './request'
+export const getDevices = () => get<DeviceListResponse>('/devices')
+```
 
-## API Base URL
+### Authentication
 
-- Development: `http://localhost:8080/api`
-- Configure via `.env.development` and `.env.production`
+- **Storage Keys**: `hydroponic_token`, `hydroponic_user`
+- **Token Flow**: Login → store in localStorage → auto-attach to requests → 401 clears and redirects
+- **Store**: `useAuthStore()` provides `user`, `token`, `isLoggedIn`, `roles`, `login()`, `logout()`
 
-## MVP Scope (Phase 1)
+### Permissions
 
-- Login page
-- Device list + detail
-- Device groups
-- Telemetry realtime data
-- Telemetry history data
+**Roles (descending authority):**
+| Role | Permissions |
+|------|-------------|
+| ADMIN | Full access (user management, device editing, control) |
+| OPERATOR | Query + device control |
+| VIEWER | Query only |
+
+**Usage in components:**
+```typescript
+import { usePermission } from '@/composables'
+const { canEditDevice, canControlDevice, canManageUser } = usePermission()
+```
+
+**Usage in routes:**
+```typescript
+meta: { roles: [Role.ADMIN] }  // Only ADMIN can access
+```
+
+### State Management
+
+- **Global state**: Pinia stores (`auth.ts`, `device.ts`)
+- **Local state**: `ref()`/`reactive()` in components
+- **Persisted state**: Only auth (token + user) via localStorage
+
+## Code Conventions
+
+### Naming
+
+- **Files**: kebab-case for views (`device-groups/`), PascalCase for components
+- **Components**: PascalCase (`AppHeader.vue`)
+- **Composables**: camelCase with `use` prefix (`useAuth.ts`)
+- **Stores**: camelCase (`useAuthStore`)
+- **Types**: PascalCase interfaces, UPPER_CASE enums
+
+### Vue Components
+
+- Use `<script setup lang="ts">` syntax
+- Prefer Composition API with `ref()`/`computed()`
+- Import types from `@/types`
+
+### API Module Pattern
+
+```typescript
+// src/api/example.ts
+import { get, post } from './request'
+import type { Example } from '@/types'
+
+export const getExampleList = () => get<Example[]>('/examples')
+export const createExample = (data: CreateExampleRequest) => post<Example>('/examples', data)
+```
+
+## Environment Variables
+
+| Variable | Development | Production |
+|----------|-------------|------------|
+| `VITE_API_BASE_URL` | `http://localhost:8080/api` | Configure in `.env.production` |
+
+## Implemented Features
+
+- [x] Login page with JWT authentication
+- [x] Device list and detail pages
+- [x] Device groups management
+- [x] Telemetry realtime data view
+- [x] Telemetry history data view
+- [x] Route guards with auth check
+- [x] Permission-based access control
 
 ## Documentation
 
-- `docs/FRONTEND_PRD.md` - Full product requirements
-- `docs/API_SPEC.md` - Complete API specification
+- `docs/FRONTEND_PRD.md` - Product requirements
+- `docs/API_SPEC.md` - API specification
 - `docs/plans/2026-04-20-mvp-frontend-design.md` - MVP design decisions
+
+## Common Tasks
+
+### Add a new page
+
+1. Create view in `src/views/<feature>/index.vue`
+2. Add route in `src/router/index.ts`
+3. Add API module if needed in `src/api/<feature>.ts`
+4. Add types in `src/types/<feature>.ts`
+
+### Add a new API endpoint
+
+1. Define types in `src/types/`
+2. Add function in `src/api/<module>.ts` using `get/post/put/del`
+3. Export from `src/api/index.ts`
+
+### Add permission check
+
+```typescript
+// In component
+const { hasRole, canControlDevice } = usePermission()
+if (canControlDevice()) { /* show control button */ }
+
+// In route meta
+meta: { roles: [Role.ADMIN, Role.OPERATOR] }
+```
