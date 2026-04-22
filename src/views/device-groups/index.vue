@@ -9,6 +9,13 @@
         </el-button>
       </div>
 
+      <!-- 筛选区 -->
+      <div class="filter-section" v-if="greenhouses.length > 0">
+        <el-select v-model="filterGreenhouseId" placeholder="筛选温室" clearable style="width: 200px" @change="fetchGroups">
+          <el-option v-for="gh in greenhouses" :key="gh.id" :label="gh.name" :value="gh.id" />
+        </el-select>
+      </div>
+
       <!-- 分组卡片 -->
       <div class="groups-grid" v-loading="loading">
         <el-card v-for="group in groups" :key="group.id" class="group-card">
@@ -23,7 +30,7 @@
             </div>
           </template>
           <el-descriptions :column="1" border size="small">
-            <el-descriptions-item label="温室ID">{{ group.greenhouse_id }}</el-descriptions-item>
+            <el-descriptions-item label="所属温室">{{ getGreenhouseName(group.greenhouse_id) }}</el-descriptions-item>
             <el-descriptions-item label="描述">{{ group.description || '-' }}</el-descriptions-item>
             <el-descriptions-item label="设备数量">{{ group.device_count || 0 }}</el-descriptions-item>
           </el-descriptions>
@@ -35,14 +42,16 @@
       <!-- 新增/编辑分组弹窗 -->
       <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑分组' : '新增分组'" width="500px">
         <el-form ref="formRef" :model="formData" :rules="formRules" label-width="80px">
-          <el-form-item label="温室ID" prop="greenhouse_id">
-            <el-input-number v-model="formData.greenhouse_id" :min="1" />
+          <el-form-item label="所属温室" prop="greenhouse_id">
+            <el-select v-model="formData.greenhouse_id" placeholder="请选择温室" style="width: 100%">
+              <el-option v-for="gh in greenhouses" :key="gh.id" :label="gh.name" :value="gh.id" />
+            </el-select>
           </el-form-item>
           <el-form-item label="分组名称" prop="name">
-            <el-input v-model="formData.name" placeholder="请输入分组名称" />
+            <el-input v-model="formData.name" placeholder="请输入分组名称" maxlength="64" />
           </el-form-item>
           <el-form-item label="描述" prop="description">
-            <el-input v-model="formData.description" type="textarea" :rows="3" placeholder="请输入描述" />
+            <el-input v-model="formData.description" type="textarea" :rows="3" placeholder="请输入描述（可选）" maxlength="255" />
           </el-form-item>
         </el-form>
         <template #footer>
@@ -80,19 +89,26 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { AppLayout } from '@/components/layout'
 import { getDeviceGroups, createDeviceGroup, updateDeviceGroup, deleteDeviceGroup, addDeviceToGroup, removeDeviceFromGroup } from '@/api/device-group'
 import { getDevices } from '@/api/device'
+import { greenhouseApi } from '@/api'
 import { usePermission } from '@/composables/usePermission'
-import { DeviceGroup, Device } from '@/types'
+import { DeviceGroup, Device, Greenhouse } from '@/types'
 
+const route = useRoute()
 const { canEditDevice } = usePermission()
 const canEdit = computed(() => canEditDevice())
 
 const groups = ref<DeviceGroup[]>([])
+const greenhouses = ref<Greenhouse[]>([])
 const loading = ref(false)
+
+// 筛选温室
+const filterGreenhouseId = ref<number | null>(null)
 
 // 弹窗
 const dialogVisible = ref(false)
@@ -102,13 +118,13 @@ const submitLoading = ref(false)
 const editingId = ref<number | null>(null)
 
 const formData = reactive({
-  greenhouse_id: 1,
+  greenhouse_id: null as number | null,
   name: '',
   description: ''
 })
 
 const formRules: FormRules = {
-  greenhouse_id: [{ required: true, message: '请输入温室ID', trigger: 'blur' }],
+  greenhouse_id: [{ required: true, message: '请选择温室', trigger: 'change' }],
   name: [
     { required: true, message: '请输入分组名称', trigger: 'blur' },
     { min: 1, max: 64, message: '分组名称长度为 1-64 个字符', trigger: 'blur' }
@@ -122,11 +138,27 @@ const currentGroup = ref<DeviceGroup | null>(null)
 const allDevices = ref<Device[]>([])
 const selectedDevices = ref<number[]>([])
 
+// 获取温室名称
+function getGreenhouseName(greenhouseId: number): string {
+  const gh = greenhouses.value.find(g => g.id === greenhouseId)
+  return gh?.name || `ID: ${greenhouseId}`
+}
+
+// 获取温室列表
+async function fetchGreenhouses() {
+  try {
+    const data = await greenhouseApi.getGreenhouses({ page: 1, page_size: 100 })
+    greenhouses.value = data.items
+  } catch {
+    // 错误已处理
+  }
+}
+
 // 获取分组列表
 async function fetchGroups() {
   loading.value = true
   try {
-    const result = await getDeviceGroups()
+    const result = await getDeviceGroups(filterGreenhouseId.value || undefined)
     groups.value = result.items
   } finally {
     loading.value = false
@@ -138,7 +170,7 @@ function openCreateDialog() {
   isEdit.value = false
   editingId.value = null
   Object.assign(formData, {
-    greenhouse_id: 1,
+    greenhouse_id: filterGreenhouseId.value || null,
     name: '',
     description: ''
   })
@@ -176,7 +208,7 @@ async function handleSubmit() {
       ElMessage.success('分组更新成功')
     } else {
       await createDeviceGroup({
-        greenhouse_id: formData.greenhouse_id,
+        greenhouse_id: formData.greenhouse_id!,
         name: formData.name,
         description: formData.description
       })
@@ -259,6 +291,11 @@ async function handleManageDevices() {
 }
 
 onMounted(() => {
+  // 从 URL 参数获取温室筛选
+  if (route.query.greenhouse_id) {
+    filterGreenhouseId.value = Number(route.query.greenhouse_id)
+  }
+  fetchGreenhouses()
   fetchGroups()
 })
 </script>
@@ -276,6 +313,10 @@ onMounted(() => {
     font-size: 18px;
     font-weight: 600;
     margin: 0;
+  }
+
+  .filter-section {
+    margin-bottom: 16px;
   }
 
   .groups-grid {

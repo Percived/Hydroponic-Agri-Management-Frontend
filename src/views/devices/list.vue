@@ -18,6 +18,9 @@
         <el-select v-model="filters.category" placeholder="设备分类" clearable style="width: 120px">
           <el-option v-for="cat in categoryOptions" :key="cat.value" :label="cat.label" :value="cat.value" />
         </el-select>
+        <el-select v-model="filters.greenhouse_id" placeholder="所属温室" clearable style="width: 150px">
+          <el-option v-for="gh in greenhouses" :key="gh.id" :label="gh.name" :value="gh.id" />
+        </el-select>
         <el-select v-model="filters.group_id" placeholder="所属分组" clearable style="width: 150px">
           <el-option v-for="group in deviceGroups" :key="group.id" :label="group.name" :value="group.id" />
         </el-select>
@@ -44,6 +47,11 @@
           <el-table-column prop="category" label="分类" width="100">
             <template #default="{ row }">
               {{ getCategoryName(row.category) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="greenhouse_id" label="温室" width="100">
+            <template #default="{ row }">
+              {{ getGreenhouseName(row.greenhouse_id) }}
             </template>
           </el-table-column>
           <el-table-column prop="group_id" label="分组" width="100">
@@ -88,34 +96,39 @@
       </div>
 
       <!-- 新增/编辑弹窗 -->
-      <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑设备' : '新增设备'" width="500px">
+      <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑设备' : '新增设备'" width="550px">
         <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
           <el-form-item label="设备编码" prop="device_code">
-            <el-input v-model="formData.device_code" :disabled="isEdit" placeholder="请输入设备编码" />
+            <el-input v-model="formData.device_code" :disabled="isEdit" placeholder="请输入设备编码" maxlength="64" />
           </el-form-item>
           <el-form-item label="设备名称" prop="name">
-            <el-input v-model="formData.name" placeholder="请输入设备名称" />
+            <el-input v-model="formData.name" placeholder="请输入设备名称" maxlength="64" />
           </el-form-item>
           <el-form-item label="设备类型" prop="type">
-            <el-select v-model="formData.type" placeholder="请选择设备类型">
+            <el-select v-model="formData.type" placeholder="请选择设备类型" style="width: 100%">
               <el-option label="传感器" value="SENSOR" />
               <el-option label="执行器" value="ACTUATOR" />
             </el-select>
           </el-form-item>
           <el-form-item label="设备分类" prop="category">
-            <el-select v-model="formData.category" placeholder="请选择设备分类">
+            <el-select v-model="formData.category" placeholder="请选择设备分类" style="width: 100%">
               <el-option v-for="cat in categoryOptions" :key="cat.value" :label="cat.label" :value="cat.value" />
             </el-select>
           </el-form-item>
           <el-form-item label="通信协议" prop="protocol">
-            <el-select v-model="formData.protocol" placeholder="请选择通信协议">
+            <el-select v-model="formData.protocol" placeholder="请选择通信协议" style="width: 100%">
               <el-option label="MQTT" value="MQTT" />
               <el-option label="HTTP" value="HTTP" />
             </el-select>
           </el-form-item>
+          <el-form-item label="所属温室" prop="greenhouse_id">
+            <el-select v-model="formData.greenhouse_id" placeholder="请选择温室" clearable style="width: 100%">
+              <el-option v-for="gh in greenhouses" :key="gh.id" :label="gh.name" :value="gh.id" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="所属分组" prop="group_id">
-            <el-select v-model="formData.group_id" placeholder="请选择分组" clearable>
-              <el-option v-for="group in deviceGroups" :key="group.id" :label="group.name" :value="group.id" />
+            <el-select v-model="formData.group_id" placeholder="请选择分组" clearable style="width: 100%">
+              <el-option v-for="group in filteredDeviceGroups" :key="group.id" :label="group.name" :value="group.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="采样间隔" prop="sampling_interval_sec">
@@ -133,18 +146,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { AppLayout } from '@/components/layout'
 import { useDeviceStore } from '@/stores/device'
+import { useGreenhouseStore } from '@/stores/greenhouse'
 import { usePermission } from '@/composables/usePermission'
 import { getCategoryName } from '@/utils/format'
 import { Device, DeviceFormData, DeviceGroup, DeviceType, DeviceProtocol, DeviceStatus } from '@/types'
 
 const router = useRouter()
 const deviceStore = useDeviceStore()
+const greenhouseStore = useGreenhouseStore()
 const { canEditDevice } = usePermission()
 
 const canEdit = computed(() => canEditDevice())
@@ -152,6 +167,7 @@ const canEdit = computed(() => canEditDevice())
 // 数据
 const devices = computed(() => deviceStore.devices)
 const deviceGroups = computed(() => deviceStore.deviceGroups as DeviceGroup[])
+const greenhouses = computed(() => greenhouseStore.greenhouses)
 const total = computed(() => deviceStore.total)
 const loading = computed(() => deviceStore.loading)
 
@@ -159,6 +175,7 @@ const loading = computed(() => deviceStore.loading)
 const filters = reactive({
   type: '',
   category: '',
+  greenhouse_id: null as number | null,
   group_id: null as number | null,
   status: '',
   keyword: ''
@@ -196,6 +213,7 @@ const formData = reactive<DeviceFormData>({
   type: DeviceType.SENSOR,
   category: 'TEMP',
   protocol: DeviceProtocol.MQTT,
+  greenhouse_id: null,
   group_id: null,
   sampling_interval_sec: 60
 })
@@ -214,6 +232,19 @@ const formRules: FormRules = {
   protocol: [{ required: true, message: '请选择通信协议', trigger: 'change' }]
 }
 
+// 根据选择的温室筛选分组
+const filteredDeviceGroups = computed(() => {
+  if (!formData.greenhouse_id) return deviceGroups.value
+  return deviceGroups.value.filter(g => g.greenhouse_id === formData.greenhouse_id)
+})
+
+// 获取温室名称
+function getGreenhouseName(greenhouseId: number | null): string {
+  if (!greenhouseId) return '-'
+  const gh = greenhouses.value.find(g => g.id === greenhouseId)
+  return gh?.name || '-'
+}
+
 // 获取分组名称
 function getGroupName(groupId: number | null): string {
   if (!groupId) return '-'
@@ -228,6 +259,7 @@ async function fetchData() {
     page_size: pagination.pageSize,
     type: (filters.type as DeviceType) || undefined,
     category: filters.category || undefined,
+    greenhouse_id: filters.greenhouse_id || undefined,
     group_id: filters.group_id || undefined,
     status: (filters.status as DeviceStatus) || undefined,
     keyword: filters.keyword || undefined
@@ -238,6 +270,7 @@ async function fetchData() {
 function resetFilters() {
   filters.type = ''
   filters.category = ''
+  filters.greenhouse_id = null
   filters.group_id = null
   filters.status = ''
   filters.keyword = ''
@@ -260,6 +293,7 @@ function openCreateDialog() {
     type: 'SENSOR',
     category: 'TEMP',
     protocol: 'MQTT',
+    greenhouse_id: null,
     group_id: null,
     sampling_interval_sec: 60
   })
@@ -276,6 +310,7 @@ function openEditDialog(device: Device) {
     type: device.type,
     category: device.category,
     protocol: device.protocol,
+    greenhouse_id: device.greenhouse_id,
     group_id: device.group_id,
     sampling_interval_sec: device.sampling_interval_sec || 60
   })
@@ -297,6 +332,7 @@ async function handleSubmit() {
       await deviceStore.editDevice(editingId.value, {
         name: formData.name,
         category: formData.category,
+        greenhouse_id: formData.greenhouse_id,
         group_id: formData.group_id,
         sampling_interval_sec: formData.sampling_interval_sec
       })
@@ -314,9 +350,15 @@ async function handleSubmit() {
   }
 }
 
+// 监听温室变化，清空分组选择
+watch(() => formData.greenhouse_id, () => {
+  formData.group_id = null
+})
+
 onMounted(() => {
   fetchData()
   deviceStore.fetchDeviceGroups()
+  greenhouseStore.fetchGreenhouses()
 })
 </script>
 
@@ -345,6 +387,11 @@ onMounted(() => {
     display: flex;
     justify-content: flex-end;
     margin-top: 16px;
+  }
+
+  .ml-sm {
+    margin-left: 8px;
+    color: #909399;
   }
 }
 </style>

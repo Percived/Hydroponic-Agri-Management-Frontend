@@ -12,7 +12,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    redirect: '/devices'
+    name: 'Dashboard',
+    component: () => import('@/views/dashboard/index.vue'),
+    meta: { requiresAuth: true, title: '首页' }
   },
   {
     path: '/devices',
@@ -25,6 +27,12 @@ const routes: RouteRecordRaw[] = [
     name: 'DeviceDetail',
     component: () => import('@/views/devices/detail.vue'),
     meta: { requiresAuth: true, title: '设备详情' }
+  },
+  {
+    path: '/greenhouses',
+    name: 'Greenhouses',
+    component: () => import('@/views/greenhouses/index.vue'),
+    meta: { requiresAuth: true, roles: [Role.ADMIN], title: '温室管理' }
   },
   {
     path: '/device-groups',
@@ -43,6 +51,36 @@ const routes: RouteRecordRaw[] = [
     name: 'TelemetryHistory',
     component: () => import('@/views/telemetry/history.vue'),
     meta: { requiresAuth: true, title: '历史数据' }
+  },
+  {
+    path: '/alerts',
+    name: 'Alerts',
+    component: () => import('@/views/alerts/index.vue'),
+    meta: { requiresAuth: true, title: '告警中心' }
+  },
+  {
+    path: '/controls/commands',
+    name: 'ControlCommands',
+    component: () => import('@/views/controls/commands.vue'),
+    meta: { requiresAuth: true, roles: [Role.ADMIN, Role.OPERATOR], title: '控制命令' }
+  },
+  {
+    path: '/controls/rules',
+    name: 'ControlRules',
+    component: () => import('@/views/controls/rules.vue'),
+    meta: { requiresAuth: true, roles: [Role.ADMIN, Role.OPERATOR], title: '控制规则' }
+  },
+  {
+    path: '/users',
+    name: 'Users',
+    component: () => import('@/views/users/index.vue'),
+    meta: { requiresAuth: true, roles: [Role.ADMIN], title: '用户管理' }
+  },
+  {
+    path: '/audit-logs',
+    name: 'AuditLogs',
+    component: () => import('@/views/audit-logs/index.vue'),
+    meta: { requiresAuth: true, roles: [Role.ADMIN], title: '审计日志' }
   },
   {
     path: '/:pathMatch(.*)*',

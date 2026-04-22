@@ -37,15 +37,15 @@ npm run lint       # ESLint check and fix
 
 ```
 src/
-├── api/           # API modules (auth.ts, device.ts, telemetry.ts, device-group.ts)
+├── api/           # API modules (auth.ts, device.ts, telemetry.ts, device-group.ts, dashboard.ts, alert.ts, control.ts, user.ts, audit.ts)
 ├── assets/        # Static assets (styles/variables.scss, styles/global.scss)
 ├── components/    # Shared components (layout/)
 ├── composables/   # Vue composables (useAuth.ts, usePermission.ts)
 ├── router/        # Route configuration with guards
 ├── stores/        # Pinia stores (auth.ts, device.ts)
-├── types/         # TypeScript definitions (user.ts, device.ts, telemetry.ts, api.ts)
+├── types/         # TypeScript definitions (user.ts, device.ts, telemetry.ts, api.ts, dashboard.ts, alert.ts, control.ts, audit.ts)
 ├── utils/         # Utilities (storage.ts, format.ts)
-└── views/         # Page components (login/, devices/, device-groups/, telemetry/)
+└── views/         # Page components (login/, dashboard/, devices/, device-groups/, telemetry/, alerts/, controls/, users/, audit-logs/)
 ```
 
 ### API Layer
@@ -141,6 +141,7 @@ export const createExample = (data: CreateExampleRequest) => post<Example>('/exa
 
 ## Implemented Features
 
+### Phase 1 (MVP - Core Features)
 - [x] Login page with JWT authentication
 - [x] Device list and detail pages
 - [x] Device groups management
@@ -148,6 +149,17 @@ export const createExample = (data: CreateExampleRequest) => post<Example>('/exa
 - [x] Telemetry history data view
 - [x] Route guards with auth check
 - [x] Permission-based access control
+
+### Phase 2 (Enhanced Features)
+- [x] Dashboard with overview stats and charts
+- [x] Alert center with status handling
+- [x] Control commands dispatch
+- [x] Control rules management
+
+### Phase 3 (Admin Features)
+- [x] User management (admin only)
+- [x] Audit logs (admin only)
+- [x] Greenhouse management (admin only)
 
 ## Documentation
 

@@ -35,3 +35,21 @@ export interface LoginResponse {
   expires_in: number
   user: User
 }
+
+// 用户查询参数
+export interface UserQueryParams {
+  page?: number
+  page_size?: number
+  status?: UserStatus
+  keyword?: string
+}
+
+// 创建/编辑用户参数
+export interface UserFormData {
+  username?: string
+  password?: string
+  nickname?: string
+  phone?: string
+  email?: string
+  roles: Role[]
+}
