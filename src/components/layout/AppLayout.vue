@@ -4,7 +4,7 @@
     <div class="app-main">
       <AppSidebar />
       <div class="app-content">
-        <router-view />
+        <slot />
       </div>
     </div>
   </div>
