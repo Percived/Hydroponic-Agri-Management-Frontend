@@ -70,8 +70,11 @@ export function getCategoryName(category: string): string {
 }
 
 // 日期时间格式化（中文本地化）
-export function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
+export function formatDateTime(dateStr: string | undefined | null): string {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return '-'
+  return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

@@ -13,7 +13,7 @@
             <el-icon size="32"><Monitor /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ overview.online_devices }}</div>
+            <div class="stat-value">{{ overview.devices_online }}</div>
             <div class="stat-label">在线设备</div>
           </div>
         </div>
@@ -22,7 +22,7 @@
             <el-icon size="32"><Warning /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ overview.offline_devices }}</div>
+            <div class="stat-value">{{ overview.devices_offline }}</div>
             <div class="stat-label">离线设备</div>
           </div>
         </div>
@@ -31,7 +31,7 @@
             <el-icon size="32"><Bell /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ overview.active_alerts }}</div>
+            <div class="stat-value">{{ overview.alerts_open }}</div>
             <div class="stat-label">活跃告警</div>
           </div>
         </div>
@@ -40,7 +40,7 @@
             <el-icon size="32"><DataLine /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ formatBigNumber(overview.today_data_points) }}</div>
+            <div class="stat-value">{{ formatBigNumber(overview.today_data_points ?? 0) }}</div>
             <div class="stat-label">今日数据</div>
           </div>
         </div>
@@ -67,9 +67,9 @@
           </el-table-column>
           <el-table-column prop="message" label="消息" min-width="200" />
           <el-table-column prop="device_name" label="设备" width="120" />
-          <el-table-column prop="created_at" label="时间" width="180">
+          <el-table-column prop="triggered_at" label="时间" width="180">
             <template #default="{ row }">
-              {{ formatDateTime(row.created_at) }}
+              {{ formatDateTime(row.triggered_at || row.created_at) }}
             </template>
           </el-table-column>
         </el-table>
@@ -99,23 +99,22 @@ import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { Monitor, Warning, Bell, DataLine } from '@element-plus/icons-vue'
 import { AppLayout } from '@/components/layout'
-import { dashboardApi } from '@/api'
+import { dashboardApi, alertApi, deviceApi, deviceGroupApi } from '@/api'
 import { formatDateTime, getAlertLevelType, getAlertLevelName, getAlertTypeName } from '@/utils/format'
-import type { DashboardOverview, AlertSummary, DeviceTypeDistribution, DeviceGroupDistribution } from '@/types'
+import type { DashboardOverview } from '@/types'
 
 const router = useRouter()
 
 // 数据
 const loading = ref(false)
 const overview = ref<DashboardOverview>({
-  online_devices: 0,
-  offline_devices: 0,
-  active_alerts: 0,
-  today_data_points: 0
+  devices_online: 0,
+  devices_offline: 0,
+  alerts_open: 0
 })
-const recentAlerts = ref<AlertSummary[]>([])
-const typeDistribution = ref<DeviceTypeDistribution[]>([])
-const groupDistribution = ref<DeviceGroupDistribution[]>([])
+const recentAlerts = ref<any[]>([])
+const typeDistribution = ref<any[]>([])
+const groupDistribution = ref<any[]>([])
 
 // 图表 - 使用 shallowRef 避免 ECharts 实例的深度响应式代理
 const typeChartRef = ref<HTMLElement>()
@@ -146,11 +145,53 @@ function goAlerts() {
 async function fetchData() {
   loading.value = true
   try {
-    const data = await dashboardApi.getDashboardData()
-    overview.value = data.overview
-    recentAlerts.value = data.recent_alerts
-    typeDistribution.value = data.device_type_distribution
-    groupDistribution.value = data.device_group_distribution
+    // 并行请求多个接口
+    const [dashboardData, alertsData, devicesData, groupsData] = await Promise.all([
+      dashboardApi.getDashboardData(),
+      alertApi.getAlerts({ page: 1, page_size: 5 }).catch(() => ({ items: [], page: 1, page_size: 5, total: 0 })),
+      deviceApi.getDevices({ page: 1, page_size: 1000 }).catch(() => ({ items: [], page: 1, page_size: 1000, total: 0 })),
+      deviceGroupApi.getDeviceGroups().catch(() => ({ items: [] }))
+    ])
+
+    // 概览数据
+    overview.value = {
+      devices_online: dashboardData.devices_online ?? 0,
+      devices_offline: dashboardData.devices_offline ?? 0,
+      alerts_open: dashboardData.alerts_open ?? 0,
+      today_data_points: dashboardData.today_data_points ?? 0
+    }
+
+    // 最近告警 - 构建设备ID到名称的映射
+    const deviceNameMap = new Map<number, string>()
+    for (const device of devicesData.items || []) {
+      deviceNameMap.set(device.id, device.name)
+    }
+    recentAlerts.value = (alertsData.items || []).map((alert: any) => ({
+      ...alert,
+      device_name: alert.device_name || deviceNameMap.get(alert.device_id) || `设备${alert.device_id}`
+    }))
+
+    // 设备类型分布统计
+    const typeMap = new Map<string, number>()
+    for (const device of devicesData.items || []) {
+      const type = device.type || 'UNKNOWN'
+      typeMap.set(type, (typeMap.get(type) || 0) + 1)
+    }
+    typeDistribution.value = Array.from(typeMap.entries()).map(([type, count]) => ({ type, count }))
+
+    // 设备分组分布统计
+    const groupMap = new Map<string, number>()
+    const groupNames = new Map<number, string>()
+    for (const group of groupsData.items || []) {
+      groupNames.set(group.id, group.name)
+    }
+    for (const device of devicesData.items || []) {
+      if (device.group_id) {
+        const groupName = groupNames.get(device.group_id) || `分组${device.group_id}`
+        groupMap.set(groupName, (groupMap.get(groupName) || 0) + 1)
+      }
+    }
+    groupDistribution.value = Array.from(groupMap.entries()).map(([group_name, count]) => ({ group_name, count }))
 
     // 更新图表
     updateCharts()

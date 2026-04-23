@@ -67,9 +67,9 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="created_at" label="创建时间" width="180">
+          <el-table-column prop="triggered_at" label="触发时间" width="180">
             <template #default="{ row }">
-              {{ formatDateTime(row.created_at) }}
+              {{ formatDateTime(row.triggered_at || row.created_at) }}
             </template>
           </el-table-column>
           <el-table-column label="操作" width="100" fixed="right">
