@@ -40,7 +40,7 @@
             <el-icon size="32"><DataLine /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-value">{{ formatNumber(overview.today_data_points) }}</div>
+            <div class="stat-value">{{ formatBigNumber(overview.today_data_points) }}</div>
             <div class="stat-label">今日数据</div>
           </div>
         </div>
@@ -94,12 +94,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { Monitor, Warning, Bell, DataLine } from '@element-plus/icons-vue'
 import { AppLayout } from '@/components/layout'
 import { dashboardApi } from '@/api'
+import { formatDateTime, getAlertLevelType, getAlertLevelName, getAlertTypeName } from '@/utils/format'
 import type { DashboardOverview, AlertSummary, DeviceTypeDistribution, DeviceGroupDistribution } from '@/types'
 
 const router = useRouter()
@@ -116,11 +117,11 @@ const recentAlerts = ref<AlertSummary[]>([])
 const typeDistribution = ref<DeviceTypeDistribution[]>([])
 const groupDistribution = ref<DeviceGroupDistribution[]>([])
 
-// 图表
+// 图表 - 使用 shallowRef 避免 ECharts 实例的深度响应式代理
 const typeChartRef = ref<HTMLElement>()
 const groupChartRef = ref<HTMLElement>()
-let typeChart: echarts.ECharts | null = null
-let groupChart: echarts.ECharts | null = null
+const typeChart = shallowRef<echarts.ECharts | null>(null)
+const groupChart = shallowRef<echarts.ECharts | null>(null)
 
 // 当前日期
 const currentDate = computed(() => {
@@ -128,54 +129,12 @@ const currentDate = computed(() => {
   return `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
 })
 
-// 格式化数字
-function formatNumber(num: number): string {
+// 格式化大数字（带万单位）
+function formatBigNumber(num: number): string {
   if (num >= 10000) {
     return (num / 10000).toFixed(1) + '万'
   }
   return num.toLocaleString()
-}
-
-// 格式化日期时间
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
-
-// 获取告警级别样式
-function getAlertLevelType(level: string): string {
-  const map: Record<string, string> = {
-    CRITICAL: 'danger',
-    WARN: 'warning',
-    INFO: 'info'
-  }
-  return map[level] || 'info'
-}
-
-// 获取告警级别名称
-function getAlertLevelName(level: string): string {
-  const map: Record<string, string> = {
-    CRITICAL: '严重',
-    WARN: '警告',
-    INFO: '信息'
-  }
-  return map[level] || level
-}
-
-// 获取告警类型名称
-function getAlertTypeName(type: string): string {
-  const map: Record<string, string> = {
-    THRESHOLD: '阈值',
-    OFFLINE: '离线',
-    DEVICE_ERROR: '故障'
-  }
-  return map[type] || type
 }
 
 // 跳转告警页
@@ -195,8 +154,8 @@ async function fetchData() {
 
     // 更新图表
     updateCharts()
-  } catch {
-    // 错误已处理
+  } catch (error) {
+    console.error('[Dashboard] Failed to fetch data:', error)
   } finally {
     loading.value = false
   }
@@ -205,18 +164,18 @@ async function fetchData() {
 // 初始化图表
 function initCharts() {
   if (typeChartRef.value) {
-    typeChart = echarts.init(typeChartRef.value)
+    typeChart.value = echarts.init(typeChartRef.value)
   }
   if (groupChartRef.value) {
-    groupChart = echarts.init(groupChartRef.value)
+    groupChart.value = echarts.init(groupChartRef.value)
   }
 }
 
 // 更新图表
 function updateCharts() {
   // 设备类型分布饼图
-  if (typeChart && typeDistribution.value.length > 0) {
-    typeChart.setOption({
+  if (typeChart.value && typeDistribution.value.length > 0) {
+    typeChart.value.setOption({
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)'
@@ -255,8 +214,8 @@ function updateCharts() {
   }
 
   // 设备分组分布饼图
-  if (groupChart && groupDistribution.value.length > 0) {
-    groupChart.setOption({
+  if (groupChart.value && groupDistribution.value.length > 0) {
+    groupChart.value.setOption({
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)'
@@ -297,8 +256,8 @@ function updateCharts() {
 
 // 窗口大小变化时重绘图表
 function handleResize() {
-  typeChart?.resize()
-  groupChart?.resize()
+  typeChart.value?.resize()
+  groupChart.value?.resize()
 }
 
 onMounted(() => {
@@ -309,8 +268,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  typeChart?.dispose()
-  groupChart?.dispose()
+  typeChart.value?.dispose()
+  groupChart.value?.dispose()
 })
 </script>
 

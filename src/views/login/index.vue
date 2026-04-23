@@ -90,6 +90,7 @@ async function handleLogin() {
     router.push(redirect)
   } catch (error) {
     // 错误已在请求拦截器中处理
+    console.error('[Login] Failed:', error)
   } finally {
     loading.value = false
   }

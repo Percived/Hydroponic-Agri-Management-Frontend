@@ -117,11 +117,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, shallowRef } from 'vue'
 import { AppLayout } from '@/components/layout'
 import { getDevices } from '@/api/device'
 import { getHistoryTelemetry, getTelemetryStats } from '@/api/telemetry'
 import { formatDate, formatNumber } from '@/utils/format'
+import { LARGE_PAGE_SIZE } from '@/utils/constants'
 import { Device, TelemetryPoint, TelemetryStats, MetricNames, MetricUnits, DeviceType } from '@/types'
 import * as echarts from 'echarts'
 
@@ -151,9 +152,9 @@ const hasData = ref(false)
 // 展示模式
 const viewMode = ref<'chart' | 'table'>('chart')
 
-// 图表
+// 图表 - 使用 shallowRef 避免 ECharts 实例的深度响应式代理
 const chartRef = ref<HTMLElement | null>(null)
-let chartInstance: echarts.ECharts | null = null
+const chartInstance = shallowRef<echarts.ECharts | null>(null)
 
 // 传感器设备
 const sensorDevices = computed(() => devices.value.filter((d) => d.type === 'SENSOR'))
@@ -174,7 +175,7 @@ const currentUnit = computed(() => MetricUnits[queryParams.metric_code] || '')
 // 获取设备列表
 async function fetchDevices() {
   try {
-    const result = await getDevices({ type: DeviceType.SENSOR, page_size: 100 })
+    const result = await getDevices({ type: DeviceType.SENSOR, page_size: LARGE_PAGE_SIZE })
     devices.value = result.items
   } catch {
     // 错误已处理
@@ -235,8 +236,8 @@ function resetQuery() {
 function drawChart() {
   if (!chartRef.value || tableData.value.length === 0) return
 
-  if (!chartInstance) {
-    chartInstance = echarts.init(chartRef.value)
+  if (!chartInstance.value) {
+    chartInstance.value = echarts.init(chartRef.value)
   }
 
   const data = [...tableData.value].sort((a, b) => new Date(a.collected_at).getTime() - new Date(b.collected_at).getTime())
@@ -286,12 +287,12 @@ function drawChart() {
     ]
   }
 
-  chartInstance.setOption(option)
+  chartInstance.value.setOption(option)
 }
 
 // 窗口大小变化时重绘图表
 function handleResize() {
-  chartInstance?.resize()
+  chartInstance.value?.resize()
 }
 
 // 监听展示模式变化
@@ -299,7 +300,7 @@ watch(viewMode, () => {
   if (viewMode.value === 'chart') {
     setTimeout(() => {
       drawChart()
-      chartInstance?.resize()
+      chartInstance.value?.resize()
     }, 100)
   }
 })
@@ -317,7 +318,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  chartInstance?.dispose()
+  chartInstance.value?.dispose()
   window.removeEventListener('resize', handleResize)
 })
 </script>

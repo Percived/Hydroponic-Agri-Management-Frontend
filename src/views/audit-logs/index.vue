@@ -41,7 +41,7 @@
           <el-table-column prop="username" label="用户" width="120" />
           <el-table-column prop="action" label="操作类型" width="120">
             <template #default="{ row }">
-              {{ getActionName(row.action) }}
+              {{ getAuditActionName(row.action) }}
             </template>
           </el-table-column>
           <el-table-column prop="target_type" label="目标类型" width="100">
@@ -92,6 +92,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { AppLayout } from '@/components/layout'
 import { auditApi } from '@/api'
+import { formatDateTime, getAuditActionName, getTargetTypeName } from '@/utils/format'
 import type { AuditLog, AuditAction } from '@/types'
 
 // 数据
@@ -110,49 +111,6 @@ const pagination = reactive({
   page: 1,
   pageSize: 20
 })
-
-// 格式化日期时间
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
-
-// 获取操作类型名称
-function getActionName(action: AuditAction): string {
-  const map: Record<string, string> = {
-    LOGIN: '登录',
-    LOGOUT: '登出',
-    CREATE_DEVICE: '创建设备',
-    UPDATE_DEVICE: '更新设备',
-    DELETE_DEVICE: '删除设备',
-    CONTROL_CMD: '控制命令',
-    CREATE_RULE: '创建规则',
-    UPDATE_RULE: '更新规则',
-    DELETE_RULE: '删除规则',
-    CREATE_USER: '创建用户',
-    UPDATE_USER: '更新用户',
-    UPDATE_ALERT: '处理告警'
-  }
-  return map[action] || action
-}
-
-// 获取目标类型名称
-function getTargetTypeName(type: string): string {
-  const map: Record<string, string> = {
-    USER: '用户',
-    DEVICE: '设备',
-    RULE: '规则',
-    ALERT: '告警',
-    COMMAND: '命令'
-  }
-  return map[type] || type
-}
 
 // 获取数据
 async function fetchData() {

@@ -136,6 +136,7 @@ import { ElMessage, FormInstance, FormRules } from 'element-plus'
 import { AppLayout } from '@/components/layout'
 import { alertApi } from '@/api'
 import { usePermission } from '@/composables/usePermission'
+import { formatDateTime, getAlertTypeName, getAlertLevelType, getAlertLevelName, getAlertStatusType, getAlertStatusName } from '@/utils/format'
 import { AlertStatus } from '@/types'
 import type { Alert, AlertStats, AlertType, AlertLevel, UpdateAlertStatusParams } from '@/types'
 
@@ -178,68 +179,6 @@ const handleForm = reactive({
 
 const handleRules: FormRules = {
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
-}
-
-// 格式化日期时间
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
-
-// 获取告警类型名称
-function getAlertTypeName(type: AlertType): string {
-  const map: Record<string, string> = {
-    THRESHOLD: '阈值',
-    OFFLINE: '离线',
-    DEVICE_ERROR: '故障'
-  }
-  return map[type] || type
-}
-
-// 获取告警级别样式
-function getAlertLevelType(level: AlertLevel): string {
-  const map: Record<string, string> = {
-    CRITICAL: 'danger',
-    WARN: 'warning',
-    INFO: 'info'
-  }
-  return map[level] || 'info'
-}
-
-// 获取告警级别名称
-function getAlertLevelName(level: AlertLevel): string {
-  const map: Record<string, string> = {
-    CRITICAL: '严重',
-    WARN: '警告',
-    INFO: '信息'
-  }
-  return map[level] || level
-}
-
-// 获取告警状态样式
-function getAlertStatusType(status: AlertStatus): string {
-  const map: Record<string, string> = {
-    OPEN: 'danger',
-    ACK: 'warning',
-    CLOSED: 'success'
-  }
-  return map[status] || 'info'
-}
-
-// 获取告警状态名称
-function getAlertStatusName(status: AlertStatus): string {
-  const map: Record<string, string> = {
-    OPEN: '开放',
-    ACK: '已确认',
-    CLOSED: '已关闭'
-  }
-  return map[status] || status
 }
 
 // 获取数据

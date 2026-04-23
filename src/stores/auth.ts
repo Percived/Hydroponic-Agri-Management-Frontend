@@ -37,8 +37,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function logout() {
     try {
       await logoutApi()
-    } catch {
-      // 忽略登出接口错误
+    } catch (error) {
+      // 登出接口失败不影响清除本地状态
+      console.warn('[Auth] Logout API failed:', error)
     } finally {
       user.value = null
       token.value = null

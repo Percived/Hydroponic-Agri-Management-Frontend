@@ -254,16 +254,20 @@ function getGroupName(groupId: number | null): string {
 
 // 获取数据
 async function fetchData() {
-  await deviceStore.fetchDevices({
-    page: pagination.page,
-    page_size: pagination.pageSize,
-    type: (filters.type as DeviceType) || undefined,
-    category: filters.category || undefined,
-    greenhouse_id: filters.greenhouse_id || undefined,
-    group_id: filters.group_id || undefined,
-    status: (filters.status as DeviceStatus) || undefined,
-    keyword: filters.keyword || undefined
-  })
+  try {
+    await deviceStore.fetchDevices({
+      page: pagination.page,
+      page_size: pagination.pageSize,
+      type: (filters.type as DeviceType) || undefined,
+      category: filters.category || undefined,
+      greenhouse_id: filters.greenhouse_id || undefined,
+      group_id: filters.group_id || undefined,
+      status: (filters.status as DeviceStatus) || undefined,
+      keyword: filters.keyword || undefined
+    })
+  } catch (error) {
+    console.error('[Devices] Failed to fetch device list:', error)
+  }
 }
 
 // 重置筛选

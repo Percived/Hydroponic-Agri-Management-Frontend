@@ -33,6 +33,7 @@ instance.interceptors.response.use(
 
     // 业务错误处理
     if (data.code !== ErrorCode.SUCCESS) {
+      console.error('[API Error]', data.message, data)
       ElMessage.error(data.message || '请求失败')
       return Promise.reject(new Error(data.message))
     }
@@ -44,6 +45,8 @@ instance.interceptors.response.use(
 
     if (response) {
       const { status, data } = response
+
+      console.error('[HTTP Error]', status, data?.message || error.message)
 
       switch (status) {
         case 401:
@@ -65,6 +68,7 @@ instance.interceptors.response.use(
           ElMessage.error(data?.message || '请求失败')
       }
     } else {
+      console.error('[Network Error]', error.message)
       ElMessage.error('网络异常，请检查网络连接')
     }
 

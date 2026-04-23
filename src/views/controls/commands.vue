@@ -127,7 +127,9 @@ import { Plus } from '@element-plus/icons-vue'
 import { AppLayout } from '@/components/layout'
 import { controlApi } from '@/api'
 import { useDeviceStore } from '@/stores/device'
-import { CommandType, CommandStatus, DeviceType } from '@/types'
+import { formatDateTime, getCommandTypeName, getCommandStatusType, getCommandStatusName } from '@/utils/format'
+import { LARGE_PAGE_SIZE } from '@/utils/constants'
+import { CommandType, DeviceType } from '@/types'
 import type { ControlCommand, CreateCommandParams, Device } from '@/types'
 
 const deviceStore = useDeviceStore()
@@ -180,50 +182,6 @@ watch(() => formData.command_type, (type) => {
     payloadStr.value = '{}'
   }
 })
-
-// 格式化日期时间
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
-
-// 获取命令类型名称
-function getCommandTypeName(type: CommandType): string {
-  const map: Record<string, string> = {
-    SWITCH: '开关',
-    SET_VALUE: '设置值',
-    CALIBRATE: '校准'
-  }
-  return map[type] || type
-}
-
-// 获取命令状态样式
-function getCommandStatusType(status: CommandStatus): string {
-  const map: Record<string, string> = {
-    PENDING: 'info',
-    SENT: 'warning',
-    EXECUTED: 'success',
-    FAILED: 'danger'
-  }
-  return map[status] || 'info'
-}
-
-// 获取命令状态名称
-function getCommandStatusName(status: CommandStatus): string {
-  const map: Record<string, string> = {
-    PENDING: '待发送',
-    SENT: '已发送',
-    EXECUTED: '已执行',
-    FAILED: '失败'
-  }
-  return map[status] || status
-}
 
 // 获取数据
 async function fetchData() {
@@ -298,7 +256,7 @@ function showDetail(command: ControlCommand) {
 onMounted(() => {
   fetchData()
   // 加载设备列表
-  deviceStore.fetchDevices({ type: DeviceType.ACTUATOR, page: 1, page_size: 100 })
+  deviceStore.fetchDevices({ type: DeviceType.ACTUATOR, page: 1, page_size: LARGE_PAGE_SIZE })
 })
 </script>
 

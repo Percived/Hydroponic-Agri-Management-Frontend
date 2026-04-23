@@ -187,8 +187,8 @@ async function fetchHealth() {
   if (!deviceId.value) return
   try {
     health.value = await deviceStore.fetchDeviceHealth(deviceId.value)
-  } catch {
-    // 忽略错误
+  } catch (error) {
+    console.error('[Device Detail] Failed to fetch health:', error)
   }
 }
 
@@ -199,8 +199,8 @@ async function fetchTelemetry() {
   try {
     const result = await getLatestTelemetry({ device_id: deviceId.value })
     telemetryData.value = result.items
-  } catch {
-    // 忽略错误
+  } catch (error) {
+    console.error('[Device Detail] Failed to fetch telemetry:', error)
   } finally {
     telemetryLoading.value = false
   }
@@ -235,8 +235,8 @@ async function handleEdit() {
     })
     ElMessage.success('设备更新成功')
     editDialogVisible.value = false
-  } catch {
-    // 错误已处理
+  } catch (error) {
+    console.error('[Device Detail] Failed to update device:', error)
   } finally {
     submitLoading.value = false
   }
@@ -256,8 +256,11 @@ async function toggleStatus() {
     })
     await deviceStore.setDeviceStatus(deviceId.value, newStatus)
     ElMessage.success(`设备已${action}`)
-  } catch {
-    // 取消或错误
+  } catch (error) {
+    // 用户取消操作不记录错误
+    if (error !== 'cancel') {
+      console.error('[Device Detail] Failed to toggle status:', error)
+    }
   }
 }
 

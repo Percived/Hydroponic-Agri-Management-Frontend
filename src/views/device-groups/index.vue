@@ -97,6 +97,7 @@ import { getDeviceGroups, createDeviceGroup, updateDeviceGroup, deleteDeviceGrou
 import { getDevices } from '@/api/device'
 import { greenhouseApi } from '@/api'
 import { usePermission } from '@/composables/usePermission'
+import { LARGE_PAGE_SIZE, EXTRA_LARGE_PAGE_SIZE } from '@/utils/constants'
 import { DeviceGroup, Device, Greenhouse } from '@/types'
 
 const route = useRoute()
@@ -147,7 +148,7 @@ function getGreenhouseName(greenhouseId: number): string {
 // 获取温室列表
 async function fetchGreenhouses() {
   try {
-    const data = await greenhouseApi.getGreenhouses({ page: 1, page_size: 100 })
+    const data = await greenhouseApi.getGreenhouses({ page: 1, page_size: LARGE_PAGE_SIZE })
     greenhouses.value = data.items
   } catch {
     // 错误已处理
@@ -247,11 +248,11 @@ async function openManageDevices(group: DeviceGroup) {
 
   try {
     // 获取所有设备
-    const devicesResult = await getDevices({ page_size: 1000 })
+    const devicesResult = await getDevices({ page_size: EXTRA_LARGE_PAGE_SIZE })
     allDevices.value = devicesResult.items
 
     // 获取当前分组的设备
-    const groupDevicesResult = await getDevices({ group_id: group.id, page_size: 1000 })
+    const groupDevicesResult = await getDevices({ group_id: group.id, page_size: EXTRA_LARGE_PAGE_SIZE })
     selectedDevices.value = groupDevicesResult.items.map((d) => d.id)
   } catch {
     // 错误已处理

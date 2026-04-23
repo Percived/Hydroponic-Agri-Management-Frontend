@@ -97,21 +97,19 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to) => {
   // 设置页面标题
   document.title = (to.meta.title as string) || '水培农业管理系统'
 
   // 不需要认证的页面直接放行
   if (!to.meta.requiresAuth) {
-    next()
-    return
+    return true
   }
 
   // 检查是否登录
   const token = getToken()
   if (!token) {
-    next({ name: 'Login', query: { redirect: to.fullPath } })
-    return
+    return { name: 'Login', query: { redirect: to.fullPath } }
   }
 
   // 角色权限检查
@@ -121,12 +119,11 @@ router.beforeEach(async (to, _from, next) => {
     const { useAuthStore } = await import('@/stores/auth')
     const authStore = useAuthStore()
     if (!authStore.hasAnyRole(requiredRoles)) {
-      next({ name: 'DeviceList' })
-      return
+      return { name: 'DeviceList' }
     }
   }
 
-  next()
+  return true
 })
 
 export default router

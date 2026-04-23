@@ -141,11 +141,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { ElMessage, FormInstance, FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { AppLayout } from '@/components/layout'
 import { controlApi } from '@/api'
 import { useDeviceStore } from '@/stores/device'
+import { getCommandTypeName, getMetricName } from '@/utils/format'
+import { LARGE_PAGE_SIZE } from '@/utils/constants'
 import { CommandType, DeviceType } from '@/types'
 import type { ControlRule, ControlRuleFormData, Device } from '@/types'
 
@@ -207,29 +209,6 @@ watch(() => formData.command_type, (type) => {
     payloadStr.value = '{"value": 50}'
   }
 })
-
-// 获取指标名称
-function getMetricName(metric: string): string {
-  const map: Record<string, string> = {
-    TEMP: '温度',
-    HUMIDITY: '湿度',
-    PH: 'pH值',
-    EC: '电导率',
-    CO2: 'CO2',
-    LIGHT: '光照'
-  }
-  return map[metric] || metric
-}
-
-// 获取命令类型名称
-function getCommandTypeName(type: CommandType): string {
-  const map: Record<string, string> = {
-    SWITCH: '开关',
-    SET_VALUE: '设置值',
-    CALIBRATE: '校准'
-  }
-  return map[type] || type
-}
 
 // 获取数据
 async function fetchData() {
@@ -349,12 +328,10 @@ async function handleDelete(rule: ControlRule) {
   }
 }
 
-import { ElMessageBox } from 'element-plus'
-
 onMounted(() => {
   fetchData()
   // 加载设备列表
-  deviceStore.fetchDevices({ type: DeviceType.ACTUATOR, page: 1, page_size: 100 })
+  deviceStore.fetchDevices({ type: DeviceType.ACTUATOR, page: 1, page_size: LARGE_PAGE_SIZE })
 })
 </script>
 

@@ -1,0 +1,1 @@
+import{n as c,O as s,N as a,Q as i}from"./index-DEhT8hkQ.js";function u(e){return c("/devices",e)}function r(e){return c(`/devices/${e}`)}function v(e){return s("/devices",e)}function o(e,t){return a(`/devices/${e}`,t)}function d(e,t){return i(`/devices/${e}/status`,{status:t})}function f(e){return c(`/devices/${e}/health`)}export{r as a,f as b,v as c,d,u as g,o as u};

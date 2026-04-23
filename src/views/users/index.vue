@@ -132,6 +132,7 @@ import { ElMessage, FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { AppLayout } from '@/components/layout'
 import { userApi } from '@/api'
+import { formatDateTime, getRoleName } from '@/utils/format'
 import { Role, UserStatus } from '@/types'
 import type { User, UserFormData } from '@/types'
 
@@ -178,28 +179,6 @@ const formRules: FormRules = {
     { min: 6, max: 64, message: '密码长度为 6-64 个字符', trigger: 'blur' }
   ],
   roles: [{ required: true, message: '请选择角色', trigger: 'change' }]
-}
-
-// 格式化日期时间
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
-}
-
-// 获取角色名称
-function getRoleName(role: Role): string {
-  const map: Record<string, string> = {
-    ADMIN: '管理员',
-    OPERATOR: '操作员',
-    VIEWER: '只读'
-  }
-  return map[role] || role
 }
 
 // 获取数据

@@ -68,3 +68,151 @@ export function getCategoryName(category: string): string {
   }
   return categoryMap[category] || category
 }
+
+// 日期时间格式化（中文本地化）
+export function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
+// 告警类型名称
+export function getAlertTypeName(type: string): string {
+  const map: Record<string, string> = {
+    THRESHOLD: '阈值',
+    OFFLINE: '离线',
+    DEVICE_ERROR: '故障'
+  }
+  return map[type] || type
+}
+
+// 告警级别样式类型
+export function getAlertLevelType(level: string): string {
+  const map: Record<string, string> = {
+    CRITICAL: 'danger',
+    WARN: 'warning',
+    INFO: 'info'
+  }
+  return map[level] || 'info'
+}
+
+// 告警级别名称
+export function getAlertLevelName(level: string): string {
+  const map: Record<string, string> = {
+    CRITICAL: '严重',
+    WARN: '警告',
+    INFO: '信息'
+  }
+  return map[level] || level
+}
+
+// 告警状态样式类型
+export function getAlertStatusType(status: string): string {
+  const map: Record<string, string> = {
+    OPEN: 'danger',
+    ACK: 'warning',
+    CLOSED: 'success'
+  }
+  return map[status] || 'info'
+}
+
+// 告警状态名称
+export function getAlertStatusName(status: string): string {
+  const map: Record<string, string> = {
+    OPEN: '开放',
+    ACK: '已确认',
+    CLOSED: '已关闭'
+  }
+  return map[status] || status
+}
+
+// 命令类型名称
+export function getCommandTypeName(type: string): string {
+  const map: Record<string, string> = {
+    SWITCH: '开关',
+    SET_VALUE: '设置值',
+    CALIBRATE: '校准'
+  }
+  return map[type] || type
+}
+
+// 命令状态样式类型
+export function getCommandStatusType(status: string): string {
+  const map: Record<string, string> = {
+    PENDING: 'info',
+    SENT: 'warning',
+    EXECUTED: 'success',
+    FAILED: 'danger'
+  }
+  return map[status] || 'info'
+}
+
+// 命令状态名称
+export function getCommandStatusName(status: string): string {
+  const map: Record<string, string> = {
+    PENDING: '待发送',
+    SENT: '已发送',
+    EXECUTED: '已执行',
+    FAILED: '失败'
+  }
+  return map[status] || status
+}
+
+// 角色名称
+export function getRoleName(role: string): string {
+  const map: Record<string, string> = {
+    ADMIN: '管理员',
+    OPERATOR: '操作员',
+    VIEWER: '只读'
+  }
+  return map[role] || role
+}
+
+// 审计操作类型名称
+export function getAuditActionName(action: string): string {
+  const map: Record<string, string> = {
+    LOGIN: '登录',
+    LOGOUT: '登出',
+    CREATE_DEVICE: '创建设备',
+    UPDATE_DEVICE: '更新设备',
+    DELETE_DEVICE: '删除设备',
+    CONTROL_CMD: '控制命令',
+    CREATE_RULE: '创建规则',
+    UPDATE_RULE: '更新规则',
+    DELETE_RULE: '删除规则',
+    CREATE_USER: '创建用户',
+    UPDATE_USER: '更新用户',
+    UPDATE_ALERT: '处理告警'
+  }
+  return map[action] || action
+}
+
+// 审计目标类型名称
+export function getTargetTypeName(type: string): string {
+  const map: Record<string, string> = {
+    USER: '用户',
+    DEVICE: '设备',
+    RULE: '规则',
+    ALERT: '告警',
+    COMMAND: '命令'
+  }
+  return map[type] || type
+}
+
+// 指标名称
+export function getMetricName(metric: string): string {
+  const map: Record<string, string> = {
+    TEMP: '温度',
+    HUMIDITY: '湿度',
+    PH: 'pH值',
+    EC: '电导率',
+    CO2: 'CO2',
+    LIGHT: '光照'
+  }
+  return map[metric] || metric
+}

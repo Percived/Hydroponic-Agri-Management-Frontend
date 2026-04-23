@@ -94,6 +94,7 @@ import { ElMessage, FormInstance, FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { AppLayout } from '@/components/layout'
 import { greenhouseApi } from '@/api'
+import { formatDateTime } from '@/utils/format'
 import type { Greenhouse, GreenhouseFormData } from '@/types'
 
 const router = useRouter()
@@ -132,18 +133,6 @@ const formRules: FormRules = {
     { required: true, message: '请输入温室名称', trigger: 'blur' },
     { min: 1, max: 64, message: '温室名称长度为 1-64 个字符', trigger: 'blur' }
   ]
-}
-
-// 格式化日期时间
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
 }
 
 // 获取数据
